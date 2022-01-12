@@ -119,7 +119,6 @@ async function main() {
     await olympusTreasury.execute("0");
     console.log('success\n')
 
-    console.lo
     console.log("Authority " + authority.address)
     console.log("GOHM: " + gOHM.address)
     console.log("OHM: " + ohm.address);
