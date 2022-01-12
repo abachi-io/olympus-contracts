@@ -254,12 +254,12 @@ contract OlympusTokenMigrator is OlympusAccessControlled {
 
         IERC20(pair).approve(address(router), oldLPAmount);
         (uint256 amountA, uint256 amountB) = router.removeLiquidity(
-            token, 
-            address(oldOHM), 
+            token,
+            address(oldOHM),
             oldLPAmount,
-            _minA, 
-            _minB, 
-            address(this), 
+            _minA,
+            _minB,
+            address(this),
             block.timestamp
         );
 
@@ -269,13 +269,13 @@ contract OlympusTokenMigrator is OlympusAccessControlled {
         newOHM.approve(address(router), amountB);
 
         router.addLiquidity(
-            token, 
-            address(newOHM), 
-            amountA, 
-            amountB, 
-            amountA, 
-            amountB, 
-            address(newTreasury), 
+            token,
+            address(newOHM),
+            amountA,
+            amountB,
+            amountA,
+            amountB,
+            address(newTreasury),
             block.timestamp
         );
     }
@@ -326,7 +326,7 @@ contract OlympusTokenMigrator is OlympusAccessControlled {
 
         oldSupply = oldOHM.totalSupply(); // log total supply at time of migration
 
-        gOHM.migrate(_newStaking, _newsOHM); // change gOHM minter
+        gOHM.initialize(_newStaking, _newsOHM); // change gOHM minter
 
         _migrateToken(_reserve, true); // will deposit tokens into new treasury so reserves can be accounted for
 
