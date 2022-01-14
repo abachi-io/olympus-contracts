@@ -48,7 +48,7 @@ async function main() {
       "IOU",
       18
     );
-    console.log( "ERC20: " + authority.address + '\n');
+    console.log( "IOU: " + iou.address + '\n');
 
     generateVerifyCL(iou.address, ["IOU", "IOU", 18]);
 
@@ -274,6 +274,7 @@ async function main() {
     console.log("Bonding Calculator " + bondingCalculator.address)
     console.log("Depositry Factory: " + depository.address);
     console.log("DAI: " + dai.address);
+    console.log("IOU: " + iou.address);
     console.log('=================================================')
     console.log(verifyLines)
 }
