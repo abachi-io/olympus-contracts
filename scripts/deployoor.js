@@ -1,12 +1,12 @@
 const { ethers } = require("hardhat");
 
 const IS_PROD = false;
-const NETWORK = IS_PROD ? "polygon" : "matic"
+const NETWORK = IS_PROD ? "polygon" : "rinkeby"
 const EPOCH = IS_PROD ? "2200" : "10" // blocks, 2200 = ~8 hours
 const SOHM_INDEX = IS_PROD ? "1000000" : "1000000"
 const FIRST_EPOCH_NUMBER = IS_PROD ? "550" : "550"
 const FIRST_BLOCK_NUMBER = IS_PROD ? "100" : "100"
-const DAI = IS_PROD ? "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063" : "0xf16a450fDC96691d1e7C85F983Cd54eCa2b89278"
+const DAI = IS_PROD ? "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063" : "0x2ed471259fA8Ba3C69A1632eCa7091039Bb097C4" // MUMBAI - 0xf16a450fDC96691d1e7C85F983Cd54eCa2b89278
 const TIME_LOCK = IS_PROD ? "0" : "0" // ohm used 6600
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
@@ -22,7 +22,7 @@ function generateVerifyCL(contractAddress, constructorArgs) {
         }
       }
   }
-  verifyLines += `npx hardhat verify --network ${IS_PROD ? "polygon" : "mumbai"} ${contractAddress} ${args} && `
+  verifyLines += `npx hardhat verify --network ${NETWORK} ${contractAddress} ${args} && `
 }
 
 async function main() {
@@ -60,14 +60,14 @@ async function main() {
     console.log( "OHM: " + ohm.address + '\n');
     generateVerifyCL(ohm.address, [authority.address])
 
-    const IoU = await ethers.getContractFactory('IOUERC20Token');
-    console.log('Deploying IOU.sol');
-    const iou = await IoU.deploy(
+    const TreasuryNote = await ethers.getContractFactory('TreasuryNoteERC20Token');
+    console.log('Deploying TreasuryNote.sol');
+    const tnote = await TreasuryNote.deploy(
       authority.address
     );
-    console.log( "IOU: " + iou.address + '\n');
+    console.log( "tnote: " + tnote.address + '\n');
 
-    generateVerifyCL(iou.address, [authority.address]);
+    generateVerifyCL(tnote.address, [authority.address]);
 
     console.log('Deploying OlympusTreasury.sol')
     const OlympusTreasury = await ethers.getContractFactory('OlympusTreasury');
@@ -179,7 +179,7 @@ async function main() {
     console.log('5')
     await olympusTreasury.queueTimelock("8", depository.address, depository.address);
     console.log('6')
-    await olympusTreasury.queueTimelock("2", iou.address, iou.address);
+    await olympusTreasury.queueTimelock("2", tnote.address, tnote.address);
     console.log('7')
 
     // await olympusTreasury.queueTimelock("4", abidaiLP, abidaiLP);
@@ -219,18 +219,48 @@ async function main() {
      * @return id_         ID of new bond market
      */
 
+     console.log('=================================================')
+     console.log("Authority " + authority.address);
+     console.log("OHM: " + ohm.address);
+     console.log("Treasury: " + olympusTreasury.address);
+     console.log("GOHM: " + gOHM.address)
+     console.log("sOHM: " + sOHM.address);
+     console.log("Staking: " + staking.address);
+     console.log("Distributor: " + distributor.address);
+     console.log("Bonding Calculator " + bondingCalculator.address)
+     console.log("Depositry Factory: " + depository.address);
+     console.log("DAI: " + dai.address);
+     console.log("TNOTE: " + tnote.address);
+     console.log('=================================================')
+     console.log(verifyLines)
+
      if(!IS_PROD) {
        let initialDeposit = 1000000000000000000000
        // await dai.mint(deployer.address, initialDeposit);
        // await dai.approve(olympusTreasury.address, initialDeposit);
-       await iou.mint(deployer.address, "117300000000000000000000");
+       await tnote.mint(deployer.address, "117300000000000000000000");
        console.log('minted')
-       await iou.approve(olympusTreasury.address, "117300000000000000000000");
+       await tnote.approve(olympusTreasury.address, "117300000000000000000000");
        console.log('approved')
-       await olympusTreasury.deposit("117300000000000000000000", iou.address, "0")
+       await tnote.transfer(olympusTreasury.address, "117300000000000000000000")
        console.log('deposited')
-       const treasuryReserves = await olympusTreasury.totalReserves()
-       console.log('Treasury Reserves', parseInt(treasuryReserves))
+       await olympusTreasury.auditReserves()
+       console.log('audited reserves')
+
+       console.log('=================================================')
+       console.log("Authority " + authority.address);
+       console.log("OHM: " + ohm.address);
+       console.log("Treasury: " + olympusTreasury.address);
+       console.log("GOHM: " + gOHM.address)
+       console.log("sOHM: " + sOHM.address);
+       console.log("Staking: " + staking.address);
+       console.log("Distributor: " + distributor.address);
+       console.log("Bonding Calculator " + bondingCalculator.address)
+       console.log("Depositry Factory: " + depository.address);
+       console.log("DAI: " + dai.address);
+       console.log("TNOTE: " + tnote.address);
+       console.log('=================================================')
+       console.log(verifyLines)
 
        let capacity = 8260000000000;
        let initialPrice = 56000000000;
@@ -269,20 +299,6 @@ async function main() {
       // await depository.deposit(1, "0", initialPrice, deployer.address, deployer.address )
      }
 
-    console.log('=================================================')
-    console.log("Authority " + authority.address);
-    console.log("OHM: " + ohm.address);
-    console.log("Treasury: " + olympusTreasury.address);
-    console.log("GOHM: " + gOHM.address)
-    console.log("sOHM: " + sOHM.address);
-    console.log("Staking: " + staking.address);
-    console.log("Distributor: " + distributor.address);
-    console.log("Bonding Calculator " + bondingCalculator.address)
-    console.log("Depositry Factory: " + depository.address);
-    console.log("DAI: " + dai.address);
-    console.log("IOU: " + iou.address);
-    console.log('=================================================')
-    console.log(verifyLines)
 }
 
 main()

@@ -10,12 +10,12 @@ import "./interfaces/IERC20Permit.sol";
 import "./types/ERC20Permit.sol";
 import "./types/OlympusAccessControlled.sol";
 
-contract IOUERC20Token is ERC20Permit, IOHM, OlympusAccessControlled {
+contract TreasuryNoteERC20Token is ERC20Permit, IOHM, OlympusAccessControlled {
     using SafeMath for uint256;
 
     constructor(address _authority)
-    ERC20("IOU", "IOU", 18)
-    ERC20Permit("IOU")
+    ERC20("Treasury Note", "tNote", 18)
+    ERC20Permit("Treasury Note")
     OlympusAccessControlled(IOlympusAuthority(_authority)) {}
 
     function mint(address account_, uint256 amount_) external override onlyGovernor {
