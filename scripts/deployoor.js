@@ -223,11 +223,14 @@ async function main() {
        let initialDeposit = 1000000000000000000000
        // await dai.mint(deployer.address, initialDeposit);
        // await dai.approve(olympusTreasury.address, initialDeposit);
-       await iou.mint(deployer.address, 117300000000000);
+       await iou.mint(deployer.address, "117300000000000000000000");
        console.log('minted')
-       await iou.approve(olympusTreasury.address, 117300000000000);
+       await iou.approve(olympusTreasury.address, "117300000000000000000000");
        console.log('approved')
-       olympusTreasury.deposit(117300000000000, iou.address, "0")
+       await olympusTreasury.deposit("117300000000000000000000", iou.address, "0")
+       console.log('deposited')
+       const treasuryReserves = await olympusTreasury.totalReserves()
+       console.log('Treasury Reserves', parseInt(treasuryReserves))
 
        let capacity = 8260000000000;
        let initialPrice = 56000000000;
