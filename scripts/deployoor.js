@@ -10,11 +10,6 @@ const DAI = IS_PROD ? "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063" : "0xf16a450f
 const TIME_LOCK = IS_PROD ? "0" : "0" // ohm used 6600
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
-const governor = { address: deployer.address }
-const guardian  = { address: deployer.address }
-const policy = { address: deployer.address }
-const vault = { address: deployer.address }
-
 let verifyLines = ""
 function generateVerifyCL(contractAddress, constructorArgs) {
   let args = ""
@@ -33,6 +28,11 @@ function generateVerifyCL(contractAddress, constructorArgs) {
 async function main() {
     const [deployer] = await ethers.getSigners();
     console.log('Deploying contracts with the account: ' + deployer.address + "\n");
+
+    const governor = { address: deployer.address }
+    const guardian  = { address: deployer.address }
+    const policy = { address: deployer.address }
+    const vault = { address: deployer.address }
 
     console.log('Attaching DAI.sol')
     const MockDAI = await ethers.getContractFactory('DAI');
