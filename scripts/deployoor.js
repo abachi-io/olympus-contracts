@@ -208,32 +208,6 @@ async function main() {
 
     console.log('success\n')
 
-    /**
-     * @notice             creates a new market type
-     * @dev                current price should be in 9 decimals.
-     * @param _quoteToken  token used to deposit
-     * @param _market      [capacity (in OHM or quote), initial price / OHM (9 decimals), debt buffer (3 decimals)]
-     * @param _booleans    [capacity in quote, fixed term]
-     * @param _terms       [vesting length (if fixed term) or vested timestamp, conclusion timestamp]
-     * @param _intervals   [deposit interval (seconds), tune interval (seconds)]
-     * @return id_         ID of new bond market
-     */
-
-     console.log('=================================================')
-     console.log("Authority " + authority.address);
-     console.log("OHM: " + ohm.address);
-     console.log("Treasury: " + olympusTreasury.address);
-     console.log("GOHM: " + gOHM.address)
-     console.log("sOHM: " + sOHM.address);
-     console.log("Staking: " + staking.address);
-     console.log("Distributor: " + distributor.address);
-     console.log("Bonding Calculator " + bondingCalculator.address)
-     console.log("Depositry Factory: " + depository.address);
-     console.log("DAI: " + dai.address);
-     console.log("TNOTE: " + tnote.address);
-     console.log('=================================================')
-     console.log(verifyLines)
-
      if(!IS_PROD) {
        let initialDeposit = 1000000000000000000000
        // await dai.mint(deployer.address, initialDeposit);
@@ -243,7 +217,7 @@ async function main() {
        await tnote.approve(olympusTreasury.address, "117300000000000000000000");
        console.log('approved')
        await tnote.transfer(olympusTreasury.address, "117300000000000000000000")
-       console.log('deposited')
+       console.log('transfered tnote')
        await olympusTreasury.auditReserves()
        console.log('audited reserves')
 
@@ -261,6 +235,17 @@ async function main() {
        console.log("TNOTE: " + tnote.address);
        console.log('=================================================')
        console.log(verifyLines)
+
+       /**
+        * @notice             creates a new market type
+        * @dev                current price should be in 9 decimals.
+        * @param _quoteToken  token used to deposit
+        * @param _market      [capacity (in OHM or quote), initial price / OHM (9 decimals), debt buffer (3 decimals)]
+        * @param _booleans    [capacity in quote, fixed term]
+        * @param _terms       [vesting length (if fixed term) or vested timestamp, conclusion timestamp]
+        * @param _intervals   [deposit interval (seconds), tune interval (seconds)]
+        * @return id_         ID of new bond market
+        */
 
        let capacity = 8260000000000;
        let initialPrice = 56000000000;
