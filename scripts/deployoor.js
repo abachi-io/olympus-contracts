@@ -41,17 +41,6 @@ async function main() {
     );
     console.log( "DAI: " + dai.address + '\n');
 
-    const IoU = await ethers.getContractFactory('ERC20');
-    console.log('Deploying ERC20.sol');
-    const iou = await IoU.deploy(
-      "IOU",
-      "IOU",
-      18
-    );
-    console.log( "IOU: " + iou.address + '\n');
-
-    generateVerifyCL(iou.address, ["IOU", "IOU", 18]);
-
     const Authority = await ethers.getContractFactory('OlympusAuthority');
     console.log('Deploying OlympusAuthority.sol')
     const authority = await Authority.deploy(
@@ -70,6 +59,15 @@ async function main() {
     );
     console.log( "OHM: " + ohm.address + '\n');
     generateVerifyCL(ohm.address, [authority.address])
+
+    const IoU = await ethers.getContractFactory('IOUERC20Token');
+    console.log('Deploying IOU.sol');
+    const iou = await IoU.deploy(
+      authority.address
+    );
+    console.log( "IOU: " + iou.address + '\n');
+
+    generateVerifyCL(iou.address, [authority.address]);
 
     console.log('Deploying OlympusTreasury.sol')
     const OlympusTreasury = await ethers.getContractFactory('OlympusTreasury');
@@ -225,28 +223,33 @@ async function main() {
        let initialDeposit = 1000000000000000000000
        // await dai.mint(deployer.address, initialDeposit);
        // await dai.approve(olympusTreasury.address, initialDeposit);
-       await iou.mint(deployer.address, 117300000000000000000000);
-       await iou.approve(olympusTreasury.address, 117300000000000000000000);
-       olympusTreasury.deposit(117300000000000000000000, iou.address, "0")
+       await iou.mint(deployer.address, 117300000000000);
+       console.log('minted')
+       await iou.approve(olympusTreasury.address, 117300000000000);
+       console.log('approved')
+       olympusTreasury.deposit(117300000000000, iou.address, "0")
 
-      //  let capacity = 8260000000000;
-      //  let initialPrice = 56000000000;
-      //  let buffer = 100000;
-      //  let vesting = 1209600;
-      //  let timeToConclusion = 60 * 60 * 24;
-      //  let conclusion = Math.round((Date.now() / 1000), 0) + timeToConclusion; // now in seconds + time to conclusion
-      //  let depositInterval = 21600
-      //  let tuneInterval = 86400;
-      //
-      //  console.log('Creating DAI Bond')
-      //  await depository.create(
-      //     "0xf16a450fDC96691d1e7C85F983Cd54eCa2b89278", // _quoteToken
-      //     [capacity, initialPrice, buffer], // _market
-      //     [false, true], // _booleans
-      //     [vesting, conclusion], // _terms
-      //     [depositInterval, tuneInterval] // _intervals
-      //   );
-      // console.log("success\n")
+       let capacity = 8260000000000;
+       let initialPrice = 56000000000;
+       let buffer = 100000;
+       let vesting = 1209600; // how long bond
+       let timeToConclusion = 60 * 60 * 24; // 1 day
+       let conclusion = Math.round((Date.now() / 1000), 0) + timeToConclusion; // now in seconds + time to conclusion
+       let depositInterval = 21600 // 4 hours
+       let tuneInterval = 86400; // 1 hour
+
+       console.log('Creating DAI Bond')
+       await depository.create(
+          "0xf16a450fDC96691d1e7C85F983Cd54eCa2b89278", // _quoteToken
+          [capacity, initialPrice, buffer], // _market
+          [false, true], // _booleans
+          [vesting, conclusion], // _terms
+          [depositInterval, tuneInterval] // _intervals
+        );
+
+        await depository.deposit(0, "0", initialPrice, deployer.address, deployer.address )
+
+      console.log("success\n")
       //
       // /**
       //  * @notice             deposit quote tokens in exchange for a bond from a specified market
