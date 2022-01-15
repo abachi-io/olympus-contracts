@@ -12,6 +12,7 @@ import "./types/OlympusAccessControlled.sol";
 
 contract TreasuryNoteERC20Token is ERC20Permit, IOHM, OlympusAccessControlled {
     using SafeMath for uint256;
+    string public backedAsset = "DAI";
 
     constructor(address _authority)
     ERC20("Treasury Note", "tNote", 18)
