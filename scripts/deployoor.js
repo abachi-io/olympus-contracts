@@ -1,6 +1,8 @@
 const { ethers } = require("hardhat");
 
 const IS_PROD = false;
+const MINT_DAI = true;
+
 const NETWORK = IS_PROD ? "polygon" : "rinkeby"
 const EPOCH = IS_PROD ? "2200" : "10" // blocks, 2200 = ~8 hours
 const SOHM_INDEX = IS_PROD ? "1000000" : "1000000"
@@ -34,12 +36,23 @@ async function main() {
     const policy = { address: deployer.address }
     const vault = { address: deployer.address }
 
+
     console.log('Attaching DAI.sol')
-    const MockDAI = await ethers.getContractFactory('DAI');
-    const dai = await MockDAI.attach(
+    let MockDAI = await ethers.getContractFactory('DAI');
+    let dai = await MockDAI.deploy(
       DAI
     );
     console.log( "DAI: " + dai.address + '\n');
+
+    if(MINT_DAI) {
+      console.log('Deploying DAI.sol')
+      MockDAI = await ethers.getContractFactory('DAI');
+      dai = await MockDAI.deploy(
+        4
+      );
+      console.log( "DAI: " + dai.address + '\n');
+      generateVerifyCL(dai.address, [governor.address, guardian.address, policy.address, vault.address])
+    }
 
     const Authority = await ethers.getContractFactory('OlympusAuthority');
     console.log('Deploying OlympusAuthority.sol')
@@ -96,7 +109,6 @@ async function main() {
     const sOHM = await SOHM.deploy();
     console.log( "SOHM: " + sOHM.address + '\n');
     generateVerifyCL(sOHM.address, [])
-
 
     console.log('Deploying GOHM.sol')
     const GOHM = await ethers.getContractFactory('gOHM');
@@ -165,28 +177,26 @@ async function main() {
     generateVerifyCL(depository.address, [authority.address, ohm.address, gOHM.address, staking.address, olympusTreasury.address])
 
     console.log('Treasury: queueTimelock:')
-    await olympusTreasury.queueTimelock("0", depository.address, depository.address);
+    await olympusTreasury.queueTimelock("0", depository.address, ZERO_ADDRESS);
     console.log('0')
-    await olympusTreasury.queueTimelock("0", deployer.address, deployer.address)
+    await olympusTreasury.queueTimelock("0", deployer.address, ZERO_ADDRESS)
     console.log('1')
-    await olympusTreasury.queueTimelock("2", dai.address, dai.address);
+    await olympusTreasury.queueTimelock("2", dai.address, ZERO_ADDRESS);
     console.log('2')
-    await olympusTreasury.queueTimelock("4", deployer.address, deployer.address);
+    await olympusTreasury.queueTimelock("4", deployer.address, ZERO_ADDRESS);
     console.log('3')
-    await olympusTreasury.queueTimelock("9", sOHM.address, sOHM.address);
+    await olympusTreasury.queueTimelock("9", sOHM.address, ZERO_ADDRESS);
     console.log('4')
-    await olympusTreasury.queueTimelock("8", distributor.address, distributor.address);
+    await olympusTreasury.queueTimelock("8", distributor.address, ZERO_ADDRESS);
     console.log('5')
-    await olympusTreasury.queueTimelock("8", depository.address, depository.address);
+    await olympusTreasury.queueTimelock("8", depository.address, ZERO_ADDRESS);
     console.log('6')
-    await olympusTreasury.queueTimelock("2", tnote.address, tnote.address);
+    await olympusTreasury.queueTimelock("2", tnote.address, ZERO_ADDRESS);
     console.log('7')
-
-    // await olympusTreasury.queueTimelock("4", abidaiLP, abidaiLP);
     console.log('success\n')
 
-    // do we set up a standard bonding calculator for LP tokens (ABI/DAI)
-    // do we set up LP token as 5 as quetimelock
+    // await olympusTreasury.queueTimelock("5", abidaiLP, bondingCalculator.address);
+    // ^^ Need to execute above, can be done after
 
     console.log('Treasury: executing:')
     await olympusTreasury.execute("0");
@@ -205,37 +215,18 @@ async function main() {
     console.log('6')
     await olympusTreasury.execute("7");
     console.log('7')
-
     console.log('success\n')
 
+    await tnote.mint(deployer.address, "117300000000000000000000");
+    console.log('Minted tNote')
+    await tnote.approve(olympusTreasury.address, "117300000000000000000000");
+    console.log('Approved olympus treasury to use tNote')
+    await tnote.transfer(olympusTreasury.address, "117300000000000000000000")
+    console.log('Transfered tNote to treasury\n')
+    await olympusTreasury.auditReserves()
+    console.log('Audited Reserves\n')
+
      if(!IS_PROD) {
-       let initialDeposit = 1000000000000000000000
-       // await dai.mint(deployer.address, initialDeposit);
-       // await dai.approve(olympusTreasury.address, initialDeposit);
-       await tnote.mint(deployer.address, "117300000000000000000000");
-       console.log('minted')
-       await tnote.approve(olympusTreasury.address, "117300000000000000000000");
-       console.log('approved')
-       await tnote.transfer(olympusTreasury.address, "117300000000000000000000")
-       console.log('transfered tnote')
-       await olympusTreasury.auditReserves()
-       console.log('audited reserves')
-
-       console.log('=================================================')
-       console.log("Authority " + authority.address);
-       console.log("OHM: " + ohm.address);
-       console.log("Treasury: " + olympusTreasury.address);
-       console.log("GOHM: " + gOHM.address)
-       console.log("sOHM: " + sOHM.address);
-       console.log("Staking: " + staking.address);
-       console.log("Distributor: " + distributor.address);
-       console.log("Bonding Calculator " + bondingCalculator.address)
-       console.log("Depositry Factory: " + depository.address);
-       console.log("DAI: " + dai.address);
-       console.log("TNOTE: " + tnote.address);
-       console.log('=================================================')
-       console.log(verifyLines)
-
        /**
         * @notice             creates a new market type
         * @dev                current price should be in 9 decimals.
@@ -258,32 +249,44 @@ async function main() {
 
        console.log('Creating DAI Bond')
        await depository.create(
-          "0xf16a450fDC96691d1e7C85F983Cd54eCa2b89278", // _quoteToken
+          dai.address, // _quoteToken
           [capacity, initialPrice, buffer], // _market
           [false, true], // _booleans
           [vesting, conclusion], // _terms
           [depositInterval, tuneInterval] // _intervals
         );
+        console.log("success\n")
 
+        /**
+         * @notice             deposit quote tokens in exchange for a bond from a specified market
+         * @param _id          the ID of the market
+         * @param _amount      the amount of quote token to spend
+         * @param _maxPrice    the maximum price at which to buy
+         * @param _user        the recipient of the payout
+         * @param _referral    the front end operator address
+         * @return payout_     the amount of gOHM due
+         * @return expiry_     the timestamp at which payout is redeemable
+         * @return index_      the user index of the Note (used to redeem or query information)
+         */
+        console.log('Depositing into bond')
         await depository.deposit(0, "0", initialPrice, deployer.address, deployer.address )
-
-      console.log("success\n")
-      //
-      // /**
-      //  * @notice             deposit quote tokens in exchange for a bond from a specified market
-      //  * @param _id          the ID of the market
-      //  * @param _amount      the amount of quote token to spend
-      //  * @param _maxPrice    the maximum price at which to buy
-      //  * @param _user        the recipient of the payout
-      //  * @param _referral    the front end operator address
-      //  * @return payout_     the amount of gOHM due
-      //  * @return expiry_     the timestamp at which payout is redeemable
-      //  * @return index_      the user index of the Note (used to redeem or query information)
-      //  */
-
-      // await depository.deposit(1, "0", initialPrice, deployer.address, deployer.address )
+        console.log("success\n")
      }
 
+     console.log('=================================================')
+     console.log("Authority " + authority.address);
+     console.log("OHM: " + ohm.address);
+     console.log("Treasury: " + olympusTreasury.address);
+     console.log("GOHM: " + gOHM.address)
+     console.log("sOHM: " + sOHM.address);
+     console.log("Staking: " + staking.address);
+     console.log("Distributor: " + distributor.address);
+     console.log("Bonding Calculator " + bondingCalculator.address)
+     console.log("Depositry Factory: " + depository.address);
+     console.log("DAI: " + dai.address);
+     console.log("TNOTE: " + tnote.address);
+     console.log('=================================================')
+     console.log(verifyLines)
 }
 
 main()
